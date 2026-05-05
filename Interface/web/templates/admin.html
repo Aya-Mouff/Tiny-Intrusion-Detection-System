@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>tIDS Admin - Attack Log</title>
+    <style>
+        body { background: #1a1a2e; color: #fff; font-family: Arial; padding: 20px; }
+        h1 { color: #00d4ff; }
+        table { width: 100%; border-collapse: collapse; }
+        td, th { border: 1px solid #333; padding: 10px; text-align: left; }
+        tr:hover { background: #222; }
+        .normal { color: #4caf50; }
+        .attack { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ tIDS Attack Log</h1>
+    <table id="alerts">
+        <tr>
+            <th>Time</th>
+            <th>Type</th>
+            <th>Packet Rate</th>
+            <th>Byte Rate</th>
+        </tr>
+    </table>
+    <script>
+        async function loadAlerts() {
+            const response = await fetch('/api/alerts');
+            const data = await response.json();
+            const table = document.getElementById('alerts');
+            
+            data.alerts.forEach(alert => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td>${new Date(alert.timestamp).toLocaleTimeString()}</td>
+                    <td class="attack">${alert.prediction}</td>
+                    <td>${alert.packet_rate}</td>
+                    <td>${alert.byte_rate}</td>
+                `;
+            });
+        }
+        
+        loadAlerts();
+        setInterval(loadAlerts, 5000);
+    </script>
+</body>
+</html>

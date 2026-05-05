@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tIDS · Threat Intelligence Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&family=Syne+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Ambient background effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+    <div class="scan-line"></div>
+
+    <!-- Alert Notification Container -->
+    <div id="alert-container" class="alert-container"></div>
+
+    <div class="app-shell">
+
+        <!-- ═══════════════ SIDEBAR ═══════════════ -->
+        <aside class="sidebar">
+
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <div class="logo-mark">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L3 7v5c0 5.25 3.75 10.16 9 11.34C17.25 22.16 21 17.25 21 12V7L12 2z" fill="currentColor" opacity="0.9"/>
+                        <path d="M9 12l2 2 4-4" stroke="#080d18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-name">tIDS</span>
+                    <span class="logo-sub">THREAT MONITOR</span>
+                </div>
+                <div class="logo-version">v2.1</div>
+            </div>
+
+            <!-- System status badge -->
+            <div class="sys-status-bar">
+                <div id="status-indicator" class="status-indicator idle">
+                    <div class="status-dot"></div>
+                    <span id="status-text">SYSTEM IDLE</span>
+                </div>
+            </div>
+
+            <!-- Capture controls -->
+            <div class="sidebar-section">
+                <p class="sidebar-label">Capture Engine</p>
+                <div class="control-stack">
+                    <button id="btn-start" class="ctrl-btn ctrl-start">
+                        <span class="btn-pip"></span>
+                        <span>Start Capture</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                    <button id="btn-stop" class="ctrl-btn ctrl-stop" disabled>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                        <span>Stop Engine</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live metrics -->
+            <div class="sidebar-section sidebar-metrics">
+                <p class="sidebar-label">Session Metrics</p>
+                <div class="metric-tile">
+                    <span class="metric-tile-label">Total Packets</span>
+                    <span class="metric-tile-value" id="total-packets">0</span>
+                    <div class="metric-tile-bar"><div class="metric-tile-fill" id="pkt-bar"></div></div>
+                </div>
+                <div class="metric-tile danger-tile">
+                    <span class="metric-tile-label">Threats Detected</span>
+                    <span class="metric-tile-value danger-val" id="total-threats">0</span>
+                    <div class="metric-tile-bar"><div class="metric-tile-fill danger-fill" id="threat-bar"></div></div>
+                </div>
+            </div>
+
+            <!-- AI model info -->
+            <div class="sidebar-footer">
+                <div class="ai-badge">
+                    <div class="ai-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                    </div>
+                    <div>
+                        <div class="ai-label">AI ENGINE</div>
+                        <div class="ai-name">RandomForest · RF-v4</div>
+                    </div>
+                    <div class="ai-status-dot"></div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ═══════════════ MAIN ═══════════════ -->
+        <main class="main-area">
+
+            <!-- Top Header Bar -->
+            <header class="main-header">
+                <div class="header-left">
+                    <div class="header-crumb">
+                        <span class="crumb-icon">◈</span>
+                        <span>Live Traffic Analytics</span>
+                    </div>
+                    <div class="header-time" id="header-clock"></div>
+                </div>
+                <div class="header-right">
+                    <div class="hdr-pill">
+                        <span class="hdr-pill-dot safe"></span>
+                        <span>Network Online</span>
+                    </div>
+                    <div class="hdr-pill">
+                        <span>Model: RandomForest</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard content -->
+            <div class="dashboard">
+
+                <!-- ── Row 1: State + Chart ── -->
+                <div class="panel state-panel">
+                    <div class="panel-label">
+                        <span class="panel-label-dot"></span>
+                        Current Network State
+                    </div>
+
+                    <!-- Alert box -->
+                    <div id="threat-alert" class="state-display safe">
+                        <div class="state-bg-text" id="state-bg-text">SAFE</div>
+                        <div class="state-content">
+                            <h2 id="prediction-text">Safe Mode</h2>
+                            <p id="prediction-desc">Network behavior is normal</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats pills -->
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">PKT/S</div>
+                            <div class="stat-val" id="val-pkt-rate">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">KB/S</div>
+                            <div class="stat-val" id="val-byte-rate">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">TCP SYN</div>
+                            <div class="stat-val" id="val-tcp-syn">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">UDP</div>
+                            <div class="stat-val" id="val-udp">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel chart-panel">
+                    <div class="panel-label">
+                        <span class="panel-label-dot"></span>
+                        Bandwidth &amp; Flow
+                        <span class="chart-legend">
+                            <span class="legend-pip"></span>Packets / sec
+                        </span>
+                    </div>
+                    <div class="chart-area">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- ── Row 2: Attack Stats ── -->
+                <div class="panel attack-panel">
+                    <div class="panel-header-row">
+                        <div class="panel-label">
+                            <span class="panel-label-dot"></span>
+                            Attack Statistics
+                        </div>
+                        <div class="total-badge">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                            Total: <strong id="past-attacks-total">0</strong>
+                        </div>
+                    </div>
+                    <div class="attack-grid">
+
+                        <div class="attack-card" id="card-arp-spoof">
+                            <div class="attack-card-top">
+                                <div class="atk-icon arp">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">ARP Spoof</div>
+                                    <div class="atk-sub">Layer 2 Spoofing</div>
+                                </div>
+                                <div class="atk-count" id="count-arp-spoof">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-arp-spoof"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-dns-spoof">
+                            <div class="attack-card-top">
+                                <div class="atk-icon dns">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">DNS Spoof</div>
+                                    <div class="atk-sub">DNS Hijacking</div>
+                                </div>
+                                <div class="atk-count" id="count-dns-spoof">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-dns-spoof"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-stp-spoof">
+                            <div class="attack-card-top">
+                                <div class="atk-icon stp">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">STP Spoof</div>
+                                    <div class="atk-sub">Spanning Tree</div>
+                                </div>
+                                <div class="atk-count" id="count-stp-spoof">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-stp-spoof"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-syn-flood">
+                            <div class="attack-card-top">
+                                <div class="atk-icon syn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">SYN Flood</div>
+                                    <div class="atk-sub">DoS Attack</div>
+                                </div>
+                                <div class="atk-count" id="count-syn-flood">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-syn-flood"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-udp-flood">
+                            <div class="attack-card-top">
+                                <div class="atk-icon udp">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">UDP Flood</div>
+                                    <div class="atk-sub">DoS Attack</div>
+                                </div>
+                                <div class="atk-count" id="count-udp-flood">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-udp-flood"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-smurf">
+                            <div class="attack-card-top">
+                                <div class="atk-icon smurf">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">Smurf</div>
+                                    <div class="atk-sub">Amplification</div>
+                                </div>
+                                <div class="atk-count" id="count-smurf">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-smurf"></div></div>
+                        </div>
+
+                        <div class="attack-card" id="card-igmp-spoof">
+                            <div class="attack-card-top">
+                                <div class="atk-icon igmp">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                </div>
+                                <div class="atk-info">
+                                    <div class="atk-name">IGMP Spoof</div>
+                                    <div class="atk-sub">Multicast Abuse</div>
+                                </div>
+                                <div class="atk-count" id="count-igmp-spoof">0</div>
+                            </div>
+                            <div class="atk-bar-track"><div class="atk-bar" id="bar-igmp-spoof"></div></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ── Row 3: Event Feed ── -->
+                <div class="panel feed-panel">
+                    <div class="panel-label">
+                        <span class="panel-label-dot"></span>
+                        Real-Time Threat Feed
+                        <span class="feed-live-badge">● LIVE</span>
+                    </div>
+                    <div class="feed-table-wrap">
+                        <table class="feed-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                    <th>Prediction</th>
+                                    <th>PKT Rate</th>
+                                    <th>KB/s</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /dashboard -->
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Live clock
+        function updateClock() {
+            const el = document.getElementById('header-clock');
+            if (el) el.textContent = new Date().toLocaleTimeString([], {hour12: false});
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
