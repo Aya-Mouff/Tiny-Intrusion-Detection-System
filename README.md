@@ -31,6 +31,7 @@ This project was developed collaboratively by a dedicated team passionate about 
 
 * **Aya Mouffok**
 * **Hanaa chahbar**
+*  **Sekfali Ines**
 * **[Add Other Team Members Here]**
 
 ## Future Improvements
